@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Ticket Booking - Login</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            background-image: url(Images/login-bg.webp);
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .navbar {
+            background-color: gold;
+            padding: 15px 50px;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .container {
+            background: rgba(0, 0, 0, 0.5);
+            color: gold;
+            padding: 80px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 30%;
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            text-align: left;
+            margin-bottom: 5px;
+        }
+        input {
+            margin-bottom: 15px;
+            color: white;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        input:invalid {
+            border-color: gold;
+        }
+        button {
+            background-color: gold;
+            color: black;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+        }
+        button:focus{
+            outline: none;
+        }
+        input:focus{
+            outline: none;
+            border: cyan;
+        }
+        p {
+            margin-top: 15px;
+        }
+        a {
+            color: white;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">🎬 Movie Ticket Booking</div>
+    </div>
+
+    <div class="container">
+        <h2>Login</h2>
+        <form id="loginForm">
+            <label for="username">Username:</label>
+            <input type="text" id="username" required pattern="^[a-zA-Z0-9_]+$" title="Can contain only alphabets, numbers, and underscores">
+            
+            <label for="password">Password:</label>
+            <input type="password" id="password" required pattern="^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$" title="Must be at least 8 characters long, contain at least one letter, one number, and one special character">
+            
+            <button type="submit">Login</a></button>
+        </form>
+        <p>Don't have an account? <a href="registration.html">Register here</a></p>
+    </div>
+    
+    <script>
+document.getElementById('loginForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+
+    const UserName = document.getElementById('username').value.trim();
+    const Password = document.getElementById('password').value.trim();
+
+    try {
+        const res = await fetch('http://localhost:5000/api/users/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ UserName, Password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            alert("Login Successful!");
+
+            // ✅ Store full user details in sessionStorage or localStorage
+            localStorage.setItem("UserID", data.UserID);
+localStorage.setItem("UserName", data.UserName);
+localStorage.setItem("Name", data.Name);
+localStorage.setItem("Phone", data.Phone);
+
+
+            // ✅ Redirect to profile or main dashboard
+            window.location.href = 'profile.html'; // or 'city.html' if that’s where user should go
+        } else {
+            alert(data.error || "Login failed");
+        }
+    } catch (err) {
+        console.error("Login Error:", err);
+        alert("Something went wrong!");
+    }
+});
+</script>
+
+
+</body>
+</html>

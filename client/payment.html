@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Payment</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: url(Images/main-bg.webp) no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .payment-container {
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      padding: 25px;
+      border-radius: 10px;
+      width: 400px;
+      text-align: center;
+    }
+    h2 { color: gold; margin-bottom: 15px; }
+    .details {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .payment-methods { text-align: left; }
+    .payment-methods label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    .payment-methods input { margin-right: 10px; }
+    .extra-details {
+      color: gold;
+      display: none;
+      text-align: left;
+      margin-top: 15px;
+    }
+    .extra-details label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .extra-details input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid black;
+      border-radius: 5px;
+      color: white;
+    }
+    .extra-details input:focus { border: 1px solid gold; }
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .pay-button, .cancel-button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .pay-button {
+      background: gold;
+      color: black;
+    }
+    .pay-button:hover {
+      background: black;
+      color: gold;
+    }
+    .cancel-button {
+      background: #333;
+    }
+    .cancel-button:hover {
+      background: black;
+    }
+    .success-message {
+      display: none;
+      color: gold;
+      font-size: medium;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="payment-container">
+    <h2>Payment</h2>
+    <div class="details">
+      <p><strong>Seats:</strong> <span id="selectedSeats">Loading...</span></p>
+      <p><strong>Total Price:</strong> ₹<span id="totalPrice">0</span></p>
+      <p><strong>Date:</strong> <span id="dateSummary">Loading...</span></p>
+    </div>
+
+    <div class="payment-methods">
+      <label>Choose Payment Method:</label>
+      <input type="radio" name="paymentMethod" value="UPI" id="upiOption"> UPI<br>
+      <input type="radio" name="paymentMethod" value="Card" id="cardOption"> Credit/Debit Card<br>
+      <input type="radio" name="paymentMethod" value="NetBanking" id="netbankingOption"> Net Banking
+    </div>
+
+    <!-- Card Details -->
+    <div class="extra-details" id="cardDetails">
+      <label>Card Number</label>
+      <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19"/>
+      <label>Expiry Date</label>
+      <input type="text" id="expiryDate" placeholder="MM/YY" maxlength="5"/>
+      <label>CVV</label>
+      <input type="password" id="cvv" placeholder="123" maxlength="3"/>
+    </div>
+
+    <!-- UPI Details -->
+    <div class="extra-details" id="upiDetails">
+      <label>UPI ID</label>
+      <input type="text" id="upiId" placeholder="example@upi"/>
+    </div>
+
+    <!-- Net Banking Details -->
+    <div class="extra-details" id="netbankingDetails">
+      <label>Bank Account Number</label>
+      <input type="text" id="bankAccNumber" placeholder="1234567890123456"/>
+    </div>
+
+    <div class="buttons">
+      <button class="pay-button" id="payNow">Pay Now</button>
+      <button class="cancel-button" id="cancelPayment">Cancel</button>
+    </div>
+
+    <p class="success-message" id="successMessage">Payment Successful! 🎉</p>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const selectedSeats = JSON.parse(sessionStorage.getItem("selectedSeats")) || [];
+      const totalPrice = sessionStorage.getItem("totalPrice") || 0;
+        const date = sessionStorage.getItem("selectedDate") || "Not selected";
+
+      document.getElementById("selectedSeats").textContent = selectedSeats.join(", ") || "None";
+      document.getElementById("totalPrice").textContent = totalPrice;
+        document.getElementById("dateSummary").textContent = date;
+
+
+      let cardDetails = document.getElementById("cardDetails");
+      let upiDetails = document.getElementById("upiDetails");
+      let netbankingDetails = document.getElementById("netbankingDetails");
+
+      document.querySelectorAll("input[name='paymentMethod']").forEach(input => {
+        input.addEventListener("change", function () {
+          cardDetails.style.display = this.value === "Card" ? "block" : "none";
+          upiDetails.style.display = this.value === "UPI" ? "block" : "none";
+          netbankingDetails.style.display = this.value === "NetBanking" ? "block" : "none";
+        });
+      });
+
+      document.getElementById("payNow").addEventListener("click", async function () {
+        let selectedMethod = document.querySelector("input[name='paymentMethod']:checked");
+        if (!selectedMethod) return alert("Please select a payment method.");
+
+        const method = selectedMethod.value;
+        const TicketID = sessionStorage.getItem("TicketID");
+        const PaymentAmount = sessionStorage.getItem("totalPrice");
+
+        // Validate fields
+        if (method === "Card") {
+          const cardNumber = document.getElementById("cardNumber").value.trim().replace(/\s/g, '');
+          const expiryDate = document.getElementById("expiryDate").value.trim();
+          const cvv = document.getElementById("cvv").value.trim();
+          if (!/^\d{16}$/.test(cardNumber)) return alert("Invalid card number.");
+          if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiryDate)) return alert("Invalid expiry date.");
+          if (!/^\d{3}$/.test(cvv)) return alert("Invalid CVV.");
+        } else if (method === "UPI") {
+          const upiId = document.getElementById("upiId").value.trim();
+          if (!/^\w+@\w+$/.test(upiId)) return alert("Invalid UPI ID.");
+        } else if (method === "NetBanking") {
+          const acc = document.getElementById("bankAccNumber").value.trim();
+          if (!/^\d{10,16}$/.test(acc)) return alert("Invalid bank account number.");
+        }
+
+        // Call payment API
+        try {
+          const res = await fetch("http://localhost:5000/api/payments/pay", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ TicketID, PaymentAmount, PaymentMode: method })
+          });
+          const data = await res.json();
+
+          if (res.ok && data.PaymentID) {
+            sessionStorage.setItem("PaymentID", data.PaymentID);
+            alert("✅ Payment Successful!");
+            window.location.href = "confirm.html";
+          } else {
+            alert("❌ Payment failed: " + (data.error || "Unknown error"));
+          }
+        } catch (err) {
+          console.error("Payment error:", err);
+          alert("Something went wrong. Try again.");
+        }
+      });
+
+      document.getElementById("cancelPayment").addEventListener("click", function () {
+        window.location.href = "movieSelect.html";
+      });
+    });
+  </script>
+</body>
+</html>

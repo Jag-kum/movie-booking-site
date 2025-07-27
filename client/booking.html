@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Booking</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: url(Images/main-bg.webp) no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .container { flex: 2; }
+    .header {
+      text-align: center;
+      background: gold;
+      color: black;
+      padding: 15px;
+      border-radius: 10px;
+    }
+    .seating {
+      display: grid;
+      background-color: rgba(0, 0, 0, 0.5);
+      border-radius: 8px;
+      padding: 10px;
+      grid-template-columns: repeat(11, 40px);
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .seat {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 40px;
+      height: 40px;
+      background: rgba(255,215,0,0.5);
+      border-radius: 5px;
+      cursor: pointer;
+      position: relative;
+    }
+    .seat input {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .seat label {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .seat input:checked + label {
+      background: green;
+      color: black;
+      border-radius: 5px;
+    }
+    .seat.booked label {
+      background: red;
+      border-radius: 5px;
+      color: white;
+      cursor: not-allowed;
+    }
+    .pathway {
+      width: 40px;
+      height: 40px;
+      background: transparent;
+    }
+    .screen {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      background: rgba(255,215,0,0.8);
+      padding: 10px;
+      border-radius: 5px;
+      width: 50%;
+      margin: 20px auto;
+    }
+    .summary {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+      height: fit-content;
+    }
+    .summary h2 { color: gold; text-align: center; }
+    .selected-seats { margin-top: 10px; }
+    .total-price {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .legend {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-around;
+      font-size: 14px;
+    }
+    .footer {
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 15px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .legend div {
+      display: flex;
+      align-items: center;
+    }
+    .legend span {
+      width: 20px;
+      height: 20px;
+      display: inline-block;
+      margin-right: 5px;
+      border-radius: 5px;
+    }
+    .legend .available { background: rgba(255,215,0,0.5); }
+    .legend .selected { background: green; border: gold; }
+    .legend .booked { background: red; }
+    .confirm-button {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      margin-top: 20px;
+      font-size: 18px;
+      color: black;
+      background: gold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .confirm-button:hover {
+      background: black;
+      color: gold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><h1>Book Your Seats</h1></div>
+
+    <div style="text-align: center; margin: 20px 0;">
+      <label for="dateSelect" style="font-weight: bold; color: white;">Select Date: </label>
+      <select id="dateSelect" style="padding: 5px; font-size: 16px;"></select>
+    </div>
+
+    <div class="seating"></div>
+    <div class="screen">SCREEN THIS WAY</div>
+
+    <footer class="footer">
+      <div class="legend">
+        <div><span class="available"></span> Available</div>
+        <div><span class="selected"></span> Selected</div>
+        <div><span class="booked"></span> Booked</div>
+      </div>
+    </footer>
+  </div>
+
+  <div class="summary">
+    <h2>Selected Seats</h2>
+    <p class="selected-seats">None</p>
+    <p class="total-price">Total Price: ₹0</p>
+    <button id="confirmBooking" class="confirm-button">CONFIRM BOOKING</button>
+  </div>
+
+  <script>
+    const seatingContainer = document.querySelector('.seating');
+    const selectedSeats = [];
+    const pricePerSeat = 200;
+    const maxSeats = 5;
+    let currentDate = null;
+
+    function getNextFourDates() {
+      const today = new Date();
+      const dates = [];
+      for (let i = 0; i < 4; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        const formatted = d.toISOString().split("T")[0];
+        dates.push(formatted);
+      }
+      return dates;
+    }
+
+    function populateDateDropdown() {
+      const dateSelect = document.getElementById("dateSelect");
+      const dates = getNextFourDates();
+      dates.forEach(date => {
+        const option = document.createElement("option");
+        option.value = date;
+        option.textContent = date;
+        dateSelect.appendChild(option);
+      });
+      currentDate = dates[0];
+      dateSelect.addEventListener("change", () => {
+        currentDate = dateSelect.value;
+        renderSeats(); // refresh seats
+      });
+    }
+
+    async function renderSeats() {
+      seatingContainer.innerHTML = "";
+      selectedSeats.length = 0;
+
+      let bookedSeats = [];
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/bookings/seats?Date=${currentDate}&Time=19:30`);
+        const data = await res.json();
+        bookedSeats = [...new Set(data.bookedSeats || [])];
+      } catch (err) {
+        console.error("❌ Failed to fetch booked seats", err);
+        alert("Failed to load booked seats.");
+      }
+
+      const rows = ['A','B','C','D','E','F','G','H','I','J'];
+      for (let i = 0; i < rows.length; i++) {
+        for (let j = 1; j <= 10; j++) {
+          if (j === 6) {
+            const pathway = document.createElement("div");
+            pathway.classList.add("pathway");
+            seatingContainer.appendChild(pathway);
+          }
+
+          const seat = document.createElement("div");
+          seat.classList.add("seat");
+
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.id = `${rows[i]}${j}`;
+
+          const label = document.createElement("label");
+          label.htmlFor = input.id;
+          label.textContent = input.id;
+
+          if (bookedSeats.includes(input.id)) {
+            input.disabled = true;
+            seat.classList.add("booked");
+          }
+
+          input.addEventListener("change", function () {
+            if (this.checked) {
+              if (selectedSeats.length >= maxSeats) {
+                alert("You can book a maximum of 5 seats.");
+                this.checked = false;
+                return;
+              }
+              selectedSeats.push(this.id);
+            } else {
+              const idx = selectedSeats.indexOf(this.id);
+              if (idx > -1) selectedSeats.splice(idx, 1);
+            }
+            updateSummary();
+          });
+
+          seat.appendChild(input);
+          seat.appendChild(label);
+          seatingContainer.appendChild(seat);
+        }
+      }
+
+      updateSummary();
+    }
+
+    function updateSummary() {
+      document.querySelector(".selected-seats").textContent = selectedSeats.join(", ") || "None";
+      document.querySelector(".total-price").textContent = "Total Price: ₹" + (selectedSeats.length * pricePerSeat);
+    }
+
+    document.getElementById("confirmBooking").addEventListener("click", function () {
+      if (selectedSeats.length === 0) {
+        alert("Please select at least one seat to proceed.");
+        return;
+      }
+
+      const UserID = localStorage.getItem("UserID");
+      if (!UserID) {
+        alert("You must be logged in to book tickets.");
+        window.location.href = "login.html";
+        return;
+      }
+
+      const MovieID = localStorage.getItem("MovieID") || "MOV123";
+      const TheatreID = localStorage.getItem("TheatreID") || "THE789";
+
+      fetch("http://localhost:5000/api/bookings/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          UserID,
+          MovieID,
+          TheatreID,
+          Date: currentDate,
+          Time: "19:30",
+          NoSeats: selectedSeats.length,
+          Seats: selectedSeats,
+          Status: "Confirmed",
+          PaymentMode: "To Be Paid"
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.ticket && data.ticket.TicketID) {
+          sessionStorage.setItem("TicketID", data.ticket.TicketID);
+          sessionStorage.setItem("selectedSeats", JSON.stringify(selectedSeats));
+          sessionStorage.setItem("totalPrice", (selectedSeats.length * pricePerSeat).toString());
+          sessionStorage.setItem("selectedDate", dateSelect.value);
+          alert("Booking successful! Redirecting to payment...");
+          window.location.href = "payment.html";
+        } else {
+          alert("Booking failed. " + (data.error || "Unknown error"));
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Booking failed. Please try again.");
+      });
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      populateDateDropdown();
+      renderSeats();
+    });
+  </script>
+</body>
+</html>
